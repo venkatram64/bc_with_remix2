@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+    <script src="./node_modules/web3/dist/web3.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+
+        <h1>Employee Info</h1>
+        <span id="countEmp"></span>
+
+        <h2 id="employee"></h2>
+        <span id="empTrans"></span>
+        <hr>
+        <img id="loader" src="https://loading.io/spinners/double-ring/lg.double-ring-spinner.gif">
+
+        <label for="fname" class="col-lg-2 control-label">First Name</label>
+        <input id="fname" type="text">
+
+        <label for="lname" class="col-lg-2 control-label">Last Name</label>
+        <input id="lname" type="text">
+
+        <label for="age" class="col-lg-2 control-label">Age</label>
+        <input id="age" type="text">
+
+        <button id="button">Update Employee</button>
+
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+
+    <script>
+        if(typeof web3 !== 'undefined'){
+            web3 = new Web3(web3.currentProvider);
+        }else{
+            web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        }
+        web3.eth.defaultAccount = web3.eth.accounts[0];
+        var EmployeeInfoContract = web3.eth.contract([{"constant":true,"inputs":[{"name":"ins","type":"address"}],"name":"getEmployee","outputs":[{"name":"","type":"uint256"},{"name":"","type":"string"},{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getEmployees","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"empAccounts","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"countEmployees","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_address","type":"address"},{"name":"_age","type":"uint256"},{"name":"_fname","type":"string"},{"name":"_lname","type":"string"}],"name":"setEmployee","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"age","type":"uint256"},{"indexed":false,"name":"fname","type":"string"},{"indexed":false,"name":"lname","type":"string"}],"name":"EmpInfo","type":"event"}]);
+
+        var EmployeeInfo = EmployeeInfoContract.at('0x87ee97af5061b3015f92379ddabdf0cebe1a4444');
+                                                //got it from remix ide
+        console.log(EmployeeInfo);
+
+        //var EmployeeEvent = EmployeeInfo.Employee();
+
+        var EmployeeEvent = EmployeeInfo.EmpInfo({},'latest');
+
+        EmployeeEvent.watch(function (err, result) {
+            if (!err) {
+                if (result.blockHash != $("#empTrans").html()) 
+                    $("#loader").hide();
+                    
+                $("#empTrans").html('Block hash: ' +result.blockHash);
+                $("#employee").html(result.args.fname + ' ' + result.args.lname + ' (' + result.args.age + ' years old)');
+            } else {
+                $("#loader").hide();
+            }
+        });
+
+        EmployeeInfo.countEmployees((err, res) => {
+            if (res)
+                $("#countEmp").html(res.c + ' Employees'); 
+        });
+
+        $("#button").click(function() {
+            $("#loader").show();
+            EmployeeInfo.setEmployee(web3.eth.defaultAccount, $("#age").val(), $("#fname").val(),$("#lname").val() , (err, res) =>{
+                if(err){
+                    $("#loader").hide();
+                    console.error("Only owner can modify.");    
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
